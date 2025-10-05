@@ -1,0 +1,7 @@
+Pandas
+Streamlit
+Plotly
+Matplotlib
+Numpy
+Scikit-learn
+requests
