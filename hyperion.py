@@ -14,12 +14,12 @@ import warnings
 from urllib.parse import quote_plus
 import io
 
-# Suppress harmless user warnings
+#
 warnings.filterwarnings("ignore")
 
 NASA_TAP_BASE_URL = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
 
-# Base features to select (14 features)
+
 BASE_FEATURES = [
     'pl_orbper', 'pl_rade', 'pl_masse', 'pl_dens', 'pl_orbeccen',
     'pl_insol', 'pl_eqt', 'st_teff', 'st_mass', 'st_rad',
@@ -115,16 +115,16 @@ def generate_synthetic_true_negatives(n_stn_samples=2000):
     
     
     stn_df['pl_rade'] = np.random.uniform(15.0, 50.0, n_stn_samples) 
-    # 2. Deep Transit Depth (Fractional depth 5% to 50%) - CRITICAL FIX
+   
     stn_df['pl_trandep'] = np.random.uniform(0.05, 0.50, n_stn_samples) 
-    # 3. Short Period (common for EBs)
+    
     stn_df['pl_orbper'] = np.random.uniform(0.5, 5.0, n_stn_samples) 
 
     
     median_values = {
         'pl_dens': 5.51, 'pl_orbeccen': 0.016, 'pl_insol': 1.0, 
         'pl_eqt': 288.0, 'st_teff': 5778.0, 'st_mass': 1.0, 
-        'st_rad': 1.0, 'st_met': 0.0, 'pl_masse': 1000.0, # High mass for impostors
+        'st_rad': 1.0, 'st_met': 0.0, 'pl_masse': 1000.0, 
         'pl_trandur': 3.0, 'pl_tranmid': 2455000.0
     }
     
@@ -139,7 +139,7 @@ def generate_synthetic_true_negatives(n_stn_samples=2000):
 
     
     stn_df['st_rad'] = np.random.uniform(0.8, 1.5, n_stn_samples)
-    stn_df['pl_masse'] = np.random.uniform(500.0, 10000.0, n_stn_samples) # Massive imposter
+    stn_df['pl_masse'] = np.random.uniform(500.0, 10000.0, n_stn_samples) 
     
     stn_df['label'] = 0
     return stn_df[BASE_FEATURES + ['label']].dropna(subset=BASE_FEATURES)
@@ -320,7 +320,7 @@ Perform scientific analysis using ensemble predictions, confusion matrix, and un
 Visualize and interpret planetary properties using interactive Plotly charts.
     """)
 st.markdown("---")
-# --- Load and Train ---
+
 with st.spinner('🔭 Loading, cleaning, synthesizing data, and engineering features...'):
     X, y, X_database = load_nasa_data()
     
@@ -333,7 +333,6 @@ X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
 with st.spinner('🤖 Training Ensemble Models...'):
-    # FIXED: Added class_weight='balanced' to LR for better imbalance handling
     logreg = LogisticRegression(max_iter=5000, C=0.5, random_state=42, class_weight='balanced') 
     logreg.fit(X_train_scaled, y_train)
     
@@ -343,13 +342,12 @@ with st.spinner('🤖 Training Ensemble Models...'):
     gb = GradientBoostingClassifier(n_estimators=120, learning_rate=0.08, max_depth=4, random_state=42)
     gb.fit(X_train_scaled, y_train)
     
-    # explainer = shap.TreeExplainer(rf) # REMOVED
+    
 
 st.success("✅ Models ready and trained with synthetic FP suppression!")
 
-# --- CORE ANALYIS FUNCTION (Used by both Manual and Database Tabs) ---
+
 def run_analysis(input_data_df, name="Candidate"):
-    # Ensure columns match training order
     input_scaled = scaler.transform(input_data_df[FINAL_FEATURES])
 
     prob_lr = logreg.predict_proba(input_scaled)[0, 1]
@@ -367,29 +365,29 @@ def run_analysis(input_data_df, name="Candidate"):
         'original_data': input_data_df.iloc[0].to_dict()
     }
 
-# --- UI Tabs ---
+
 st.markdown("---")
 tab1, tab2, tab3, tab4 = st.tabs([" New Candidate Analysis", " Database Search", " Model Stats", " Data Visuals"])
 
-# --- TAB 1: MANUAL INPUT & COMPARISON (Simplified Interface) ---
+
 with tab1:
     st.header(" New Candidate Parameters")
     
     user_inputs = {}
     
-    # Use two main columns for a cleaner layout
+    
     col_planet, col_star_transit = st.columns(2)
     
     with col_planet:
         st.markdown("#### Planet & Orbit")
         col1a, col1b = st.columns(2)
         with col1a:
-            # --- UPDATED LABELS ---
+           
             user_inputs['pl_orbper'] = st.number_input(DISPLAY_MAP['pl_orbper'], 0.01, value=365.25, key="t1_orbper")
             user_inputs['pl_rade'] = st.number_input(DISPLAY_MAP['pl_rade'], 0.01, value=1.0, key="t1_rade")
             user_inputs['pl_masse'] = st.number_input(DISPLAY_MAP['pl_masse'], 0.01, value=1.0, key="t1_masse")
         with col1b:
-            # --- UPDATED LABELS ---
+            
             user_inputs['pl_dens'] = st.number_input(DISPLAY_MAP['pl_dens'], 0.01, value=5.51, key="t1_dens")
             user_inputs['pl_orbeccen'] = st.number_input(DISPLAY_MAP['pl_orbeccen'], 0.0, 0.99, value=0.016, key="t1_eccen")
             user_inputs['pl_eqt'] = st.number_input(DISPLAY_MAP['pl_eqt'], 50.0, value=288.0, key="t1_eqt")
@@ -398,22 +396,22 @@ with tab1:
         st.markdown("#### Star & Transit")
         col2a, col2b = st.columns(2)
         with col2a:
-            # --- UPDATED LABELS ---
+          
             user_inputs['st_teff'] = st.number_input(DISPLAY_MAP['st_teff'], 2000.0, value=5778.0, key="t1_teff")
             user_inputs['st_mass'] = st.number_input(DISPLAY_MAP['st_mass'], 0.1, value=1.0, key="t1_mass")
             user_inputs['st_rad'] = st.number_input(DISPLAY_MAP['st_rad'], 0.1, value=1.0, key="t1_rad")
         with col2b:
-            # --- UPDATED LABELS ---
+           
             user_inputs['pl_trandep'] = st.number_input(DISPLAY_MAP['pl_trandep'], 0.0001, value=0.01, format="%.4f", key="t1_dep", help="The fractional drop in starlight (e.g., 0.01 for a 1% drop).")
             user_inputs['pl_trandur'] = st.number_input(DISPLAY_MAP['pl_trandur'], 0.1, value=3.0, key="t1_dur")
             user_inputs['pl_insol'] = st.number_input(DISPLAY_MAP['pl_insol'], 0.01, value=1.0, key="t1_insol")
-            # Less critical inputs moved to a single line
-            user_inputs['pl_tranmid'] = 2455000.0 # Default/Hidden for simplicity
-            user_inputs['st_met'] = 0.0 # Default/Hidden for simplicity
+            
+            user_inputs['pl_tranmid'] = 2455000.0 
+            user_inputs['st_met'] = 0.0 
 
     st.markdown("---")
     
-    # Comparison Selection (Simplified)
+
     comparison_options = X_database['Name'].unique().tolist()
     comparison_planet_name = st.selectbox(
         "Compare against (Optional):",
@@ -423,16 +421,16 @@ with tab1:
     
     if st.button(" Analyze Candidate", use_container_width=True, type="primary"):
         
-        # 1. Prepare Manual Candidate Data
+        
         rade_val = user_inputs.get('pl_rade', 1.0)
         orbper_val = user_inputs.get('pl_orbper', 365.25)
         st_rad_val = user_inputs.get('st_rad', 1.0)
         trandep_val = user_inputs.get('pl_trandep', 0.01)
         
-        # Feature Engineering for Input
+        
         pl_rs_ratio_val = rade_val / (st_rad_val * 109.2)
         
-        # Hard FP Flag re-calculation
+        
         extreme_radius_threshold = 15.0 
         deep_depth_threshold = 0.05
         short_period_threshold = 10.0
@@ -448,7 +446,7 @@ with tab1:
 
         manual_df = pd.DataFrame([full_input_data], columns=['Name'] + FINAL_FEATURES)
         
-        # 2. Run Analysis for Manual Candidate
+        
         analysis_manual = run_analysis(manual_df.drop('Name', axis=1), name='USER_CANDIDATE')
         
         st.subheader("Analysis Results")
@@ -461,14 +459,14 @@ with tab1:
         with pred_col2:
             st.metric("Ensemble Confidence", f"{analysis_manual['ensemble_prob']:.1%}")
 
-        # --- Display the input data used for the prediction ---
+        
         st.markdown("#### Input Parameters")
-        # --- UPDATED: Rename index for display ---
+        
         display_df = pd.DataFrame([full_input_data]).drop(columns=['Name']).T.rename(columns={0: "Value"}).rename(DISPLAY_MAP)
         st.dataframe(display_df.applymap(lambda x: f'{x:.4f}' if isinstance(x, (float, np.float64)) else x), 
                      use_container_width=True, height=350)
 
-        # --- HABITABILITY/ZOH Indicator for Manual Candidate ---
+       
         st.markdown("#### Habitability Check (ESI & HZ)")
         hab_score, esi = calculate_habitability(rade_val, user_inputs.get('pl_eqt'))
         hz_status, in_hz = check_habitable_zone(user_inputs.get('st_teff'), user_inputs.get('pl_insol'))
@@ -479,7 +477,7 @@ with tab1:
         with hab_col3: st.metric("Habitable Zone (ZOH)", hz_status)
         
         
-        # 3. Comparison Logic
+        
         if comparison_planet_name != '(None)':
             st.markdown("---")
             st.header(f"↔️ Comparison: Your Candidate vs {comparison_planet_name}")
@@ -489,7 +487,7 @@ with tab1:
             
             analysis_comp = run_analysis(comparison_df, name=comparison_planet_name)
             
-            # Simplified Comparison Table
+            
             comp_df = pd.DataFrame({
                 'Feature': ['Detection', 'Radius (R⊕)', 'Period (days)', 'Transit Depth (Frac)', 'Habitable Zone'],
                 'Your Candidate': [
@@ -511,7 +509,7 @@ with tab1:
             st.dataframe(comp_df, use_container_width=True)
 
 
-# --- TAB 2: DATABASE SEARCH ---
+
 with tab2:
     st.header("NASA Database Search")
     
@@ -557,21 +555,21 @@ with tab2:
         
         st.markdown("---")
         st.markdown("#### Full Data Table")
-        # --- UPDATED: Rename index for display ---
+        
         st.dataframe(planet_df.T.rename(columns={0: "Value"}).rename(DISPLAY_MAP).applymap(lambda x: f'{x:.4f}' if isinstance(x, (float, np.float64)) else x), 
                      use_container_width=True)
 
 
-# --- TAB 3: MODEL STATS (Confusion Matrix) ---
+
 with tab3:
     st.header("Model Performance Summary (on Test Set)")
     
-    # Calculate individual predictions
+    
     y_pred_logreg = logreg.predict(X_test_scaled)
     y_pred_rf = rf.predict(X_test_scaled)
     y_pred_gb = gb.predict(X_test_scaled)
     
-    # Calculate individual accuracies (addressing user's specific request for LR and RF percentages)
+    
     acc_logreg = accuracy_score(y_test, y_pred_logreg)
     acc_rf = accuracy_score(y_test, y_pred_rf)
     acc_gb = accuracy_score(y_test, y_pred_gb)
@@ -635,7 +633,7 @@ with tab3:
         st.metric("False Negatives (FN)", fn)
     
     st.markdown("---")
-    # --- UPDATED: Use user-friendly feature names for the plot ---
+    
     st.subheader("Random Forest Feature Importance")
     importances = rf.feature_importances_
     # Map column names to display names
@@ -653,7 +651,7 @@ with tab3:
     st.pyplot(fig_mat)
 
 
-# --- TAB 4: DATA GRAPHS (Plotly) ---
+
 with tab4:
     st.header("Data Visualizations")
     
